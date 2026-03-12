@@ -1,0 +1,162 @@
+@page "/fields"
+@inject IFieldService FieldService
+@inject NavigationManager Navigation
+
+<PageTitle>My Fields</PageTitle>
+
+<div class="space-y-8">
+    <section class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.25em] text-emerald-700">My Fields</p>
+            <h2 class="mt-2 text-3xl font-semibold text-slate-900">Create and update field records</h2>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Each field stores acreage, county, soil, and irrigation details. Crop entries are added separately under the selected field.</p>
+        </div>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-[1.1fr_1.5fr]">
+        <div class="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-semibold text-slate-900">@(_editId.HasValue ? "Edit field" : "Add a new field")</h3>
+                    <p class="mt-1 text-sm text-slate-600">This page now uses live Blazor Server bindings and submit handlers.</p>
+                </div>
+                @if (_editId.HasValue)
+                {
+                    <button type="button" @onclick="ClearForm" class="text-sm font-semibold text-slate-600 hover:text-slate-900">Clear</button>
+                }
+            </div>
+
+            <EditForm Model="FieldForm" OnValidSubmit="HandleValidSubmit" class="space-y-4">
+                <DataAnnotationsValidator />
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="field-name">Field name</label>
+                    <InputText id="field-name" @bind-Value="FieldForm.Name" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500" />
+                    <ValidationMessage For="@(() => FieldForm.Name)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="county">County</label>
+                    <InputText id="county" @bind-Value="FieldForm.County" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500" />
+                    <ValidationMessage For="@(() => FieldForm.County)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="acres">Total acres</label>
+                    <InputNumber id="acres" @bind-Value="FieldForm.TotalAcres" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500" />
+                    <ValidationMessage For="@(() => FieldForm.TotalAcres)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="soil">Soil texture class</label>
+                    <InputSelect id="soil" @bind-Value="FieldForm.SoilType" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500">
+                        @foreach (var soilType in FieldLookups.SoilTypes)
+                        {
+                            <option value="@soilType">@FieldLookups.GetSoilTypeLabel(soilType)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => FieldForm.SoilType)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="irrigation">Irrigation practice</label>
+                    <InputSelect id="irrigation" @bind-Value="FieldForm.IrrigationType" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-emerald-500">
+                        @foreach (var irrigationType in FieldLookups.IrrigationTypes)
+                        {
+                            <option value="@irrigationType">@FieldLookups.GetIrrigationTypeLabel(irrigationType)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => FieldForm.IrrigationType)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+
+                <button type="submit" class="w-full rounded-full bg-emerald-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800">Save field</button>
+            </EditForm>
+        </div>
+
+        <div class="space-y-4">
+            @foreach (var field in FieldItems)
+            {
+                <FieldSummaryCard Field="@MapField(field)" />
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public Guid? EditId { get; set; }
+
+    private Guid? _editId;
+    private IReadOnlyList<FieldDto> FieldItems { get; set; } = [];
+    private SaveFieldRequest FieldForm { get; set; } = new SaveFieldRequest
+    {
+        SoilType = FieldLookups.SoilTypes.First(),
+        IrrigationType = FieldLookups.IrrigationTypes.First()
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadFieldsAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var saved = await FieldService.SaveFieldAsync(FieldForm);
+        await LoadFieldsAsync(saved.Id);
+        Navigation.NavigateTo($"/fields?editId={saved.Id}", replace: true);
+    }
+
+    private async Task LoadFieldsAsync(Guid? preferredEditId = null)
+    {
+        FieldItems = await FieldService.GetFieldsAsync();
+        _editId = preferredEditId ?? EditId;
+
+        var selectedField = _editId.HasValue ? FieldItems.FirstOrDefault(field => field.Id == _editId.Value) : null;
+        FieldForm = selectedField is null ? new SaveFieldRequest
+        {
+            SoilType = FieldLookups.SoilTypes.First(),
+            IrrigationType = FieldLookups.IrrigationTypes.First()
+        } : new SaveFieldRequest
+        {
+            Id = selectedField.Id,
+            Name = selectedField.Name,
+            County = selectedField.County,
+            TotalAcres = selectedField.TotalAcres,
+            SoilType = selectedField.SoilType,
+            IrrigationType = selectedField.IrrigationType
+        };
+    }
+
+    private void ClearForm()
+    {
+        _editId = null;
+        FieldForm = new SaveFieldRequest
+        {
+            SoilType = FieldLookups.SoilTypes.First(),
+            IrrigationType = FieldLookups.IrrigationTypes.First()
+        };
+        Navigation.NavigateTo("/fields", replace: true);
+    }
+
+    private static ComponentFieldModel MapField(FieldDto field)
+    {
+        return new ComponentFieldModel
+        {
+            Id = field.Id,
+            Name = field.Name,
+            County = field.County,
+            TotalAcres = field.TotalAcres,
+            SoilType = FieldLookups.GetSoilTypeLabel(field.SoilType),
+            IrrigationType = FieldLookups.GetIrrigationTypeLabel(field.IrrigationType),
+            ReportedCropAcres = field.ReportedCropAcres,
+            Crops = field.Crops.Select(crop => new ComponentCropModel
+            {
+                Id = crop.Id,
+                FieldId = crop.FieldId,
+                FieldName = field.Name,
+                CropName = crop.CropName,
+                Acres = crop.Acres,
+                YieldPerAcre = crop.YieldPerAcre,
+                Unit = crop.Unit,
+                TotalProduction = crop.TotalProduction
+            }).ToArray()
+        };
+    }
+}
+
+

@@ -1,0 +1,14 @@
+{
+  "name": "crop-yield-tracker",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "tailwind:build": "tailwindcss -i ./src/styles/tailwind.css -o ./src/CropYieldTracker.Web/wwwroot/app.css --minify",
+    "tailwind:watch": "tailwindcss -i ./src/styles/tailwind.css -o ./src/CropYieldTracker.Web/wwwroot/app.css --watch"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
+  }
+}

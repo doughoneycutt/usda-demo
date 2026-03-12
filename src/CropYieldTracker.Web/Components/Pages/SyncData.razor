@@ -1,0 +1,48 @@
+@page "/sync-data"
+
+<PageTitle>Sync Data</PageTitle>
+
+<div class="space-y-8">
+    <section>
+        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-700">Sync Data</p>
+        <h2 class="mt-2 text-3xl font-semibold text-slate-900">Send field and crop updates for reporting</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">This demo flow represents synchronizing your field and crop records to USDA NASS reporting systems so acreage and production information can be kept current for downstream reporting and analysis.</p>
+    </section>
+
+    <section class="max-w-4xl rounded-[2rem] border border-stone-200 bg-white p-8 shadow-sm">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-2xl">
+                <h3 class="text-2xl font-semibold text-slate-900">USDA NASS Synchronization</h3>
+                <p class="mt-3 text-sm leading-7 text-slate-600">When you sync, your tracked fields, crop acres, and yield records are packaged and prepared for reporting purposes. In this demo, no external system call is made, but the experience shows the confirmation flow your users would see.</p>
+                <div class="mt-5 rounded-3xl bg-indigo-50 px-5 py-4 text-sm leading-6 text-indigo-900 ring-1 ring-indigo-100">
+                    Reporting note: this synchronization represents sending operational field and crop reporting data to USDA National Agricultural Statistics Service workflows for record updates and summary reporting.
+                </div>
+            </div>
+
+            <div class="w-full max-w-sm rounded-3xl bg-slate-900 px-6 py-6 text-white shadow-lg">
+                <p class="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-200">Demo Action</p>
+                <h4 class="mt-2 text-xl font-semibold">Sync current data</h4>
+                <p class="mt-3 text-sm leading-6 text-slate-300">Use the button below to simulate a successful upload to USDA systems.</p>
+                <button type="button" @onclick="RunSync" class="mt-6 w-full rounded-full bg-amber-200 px-5 py-3 text-sm font-semibold text-slate-950 ring-1 ring-amber-100 transition hover:bg-amber-100">
+                    Sync Data
+                </button>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <div class="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-900">
+                @_successMessage
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private string? _successMessage;
+
+    private void RunSync()
+    {
+        _successMessage = "Your field and crop data has been updated in our systems. Thank you!";
+    }
+}

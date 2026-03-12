@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CropYieldTracker.Api/CropYieldTracker.Api.csproj" />
+    <Project Path="src/CropYieldTracker.Application/CropYieldTracker.Application.csproj" />
+    <Project Path="src/CropYieldTracker.Components/CropYieldTracker.Components.csproj" />
+    <Project Path="src/CropYieldTracker.Contracts/CropYieldTracker.Contracts.csproj" />
+    <Project Path="src/CropYieldTracker.Domain/CropYieldTracker.Domain.csproj" />
+    <Project Path="src/CropYieldTracker.Infrastructure/CropYieldTracker.Infrastructure.csproj" />
+    <Project Path="src/CropYieldTracker.Web/CropYieldTracker.Web.csproj" />
+  </Folder>
+</Solution>

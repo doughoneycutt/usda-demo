@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CropYieldTracker.Application\CropYieldTracker.Application.csproj" />
+    <ProjectReference Include="..\CropYieldTracker.Infrastructure\CropYieldTracker.Infrastructure.csproj" />
+    <ProjectReference Include="..\CropYieldTracker.Contracts\CropYieldTracker.Contracts.csproj" />
+    <ProjectReference Include="..\CropYieldTracker.Domain\CropYieldTracker.Domain.csproj" />
+    <ProjectReference Include="..\CropYieldTracker.Components\CropYieldTracker.Components.csproj" />
+  </ItemGroup>
+
+</Project>

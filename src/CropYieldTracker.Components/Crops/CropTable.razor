@@ -1,0 +1,38 @@
+@using System.Globalization
+
+<div class="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-stone-200 text-sm">
+            <thead class="bg-stone-50 text-left text-xs uppercase tracking-[0.18em] text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Field</th>
+                    <th class="px-4 py-3">Crop</th>
+                    <th class="px-4 py-3">Acres</th>
+                    <th class="px-4 py-3">Yield/Acre</th>
+                    <th class="px-4 py-3">Total</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-stone-100">
+                @foreach (var crop in Crops)
+                {
+                    <tr class="text-slate-700">
+                        <td class="px-4 py-3 font-medium text-slate-900">@crop.FieldName</td>
+                        <td class="px-4 py-3">@crop.CropName</td>
+                        <td class="px-4 py-3">@crop.Acres.ToString("N0", CultureInfo.InvariantCulture)</td>
+                        <td class="px-4 py-3">@crop.YieldPerAcre.ToString("N1", CultureInfo.InvariantCulture) @crop.Unit</td>
+                        <td class="px-4 py-3 font-semibold text-slate-900">@crop.TotalProduction.ToString("N0", CultureInfo.InvariantCulture) @crop.Unit</td>
+                        <td class="px-4 py-3 text-right">
+                            <a href="/crops?fieldId=@crop.FieldId&editCropId=@crop.Id" class="rounded-full border border-stone-300 px-3 py-1.5 font-medium text-slate-700 transition hover:border-slate-900 hover:text-slate-900">Edit</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ComponentCropModel> Crops { get; set; } = [];
+}

@@ -1,0 +1,48 @@
+<div class="min-h-screen bg-stone-100 text-slate-900">
+    <div class="mx-auto flex min-h-screen max-w-[120rem] flex-col lg:flex-row">
+        <aside class="w-full border-b border-stone-200 bg-white/90 px-5 py-6 shadow-sm lg:w-72 lg:border-b-0 lg:border-r lg:px-6 lg:py-8">
+            <div class="mb-8">
+                <div class="flex items-center gap-3">
+                    <img src="/usda-symbol.svg" alt="USDA" class="h-11 w-11 rounded-2xl border border-stone-200 bg-white p-2" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-700">USDA Demo</p>
+                        <h1 class="mt-1 text-2xl font-semibold text-slate-900">Crop Yield Tracker</h1>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm leading-6 text-slate-600">Track fields, crop yields, and simple production reporting in a fully interactive Blazor Server app.</p>
+            </div>
+
+            <nav class="space-y-2">
+                <NavLink href="/fields" class="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-stone-100 hover:text-slate-900" ActiveClass="bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200">
+                    My Fields
+                </NavLink>
+                <NavLink href="/crops" class="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-stone-100 hover:text-slate-900" ActiveClass="bg-amber-50 text-amber-900 ring-1 ring-amber-200">
+                    My Crops
+                </NavLink>
+                <NavLink href="/reporting" class="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-stone-100 hover:text-slate-900" ActiveClass="bg-sky-50 text-sky-900 ring-1 ring-sky-200">
+                    Reporting Tool
+                </NavLink>
+                <NavLink href="/sync-data" class="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-stone-100 hover:text-slate-900" ActiveClass="bg-indigo-50 text-indigo-900 ring-1 ring-indigo-200">
+                    Sync Data
+                </NavLink>
+                <NavLink href="/js-interop" class="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-stone-100 hover:text-slate-900" ActiveClass="bg-rose-50 text-rose-900 ring-1 ring-rose-200">
+                    JS Interop Demo
+                </NavLink>
+            </nav>
+
+            <div class="mt-8 rounded-3xl bg-slate-900 px-5 py-5 text-sm text-slate-200">
+                <p class="font-semibold text-white">Interactive Blazor Server</p>
+                <p class="mt-2 leading-6 text-slate-300">The forms and computed values update dynamically through standard Blazor event handling, while the mock data still lives in a cleanly separated application layer.</p>
+            </div>
+        </aside>
+
+        <main class="flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+            @ChildContent
+        </main>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

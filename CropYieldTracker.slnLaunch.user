@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "src\\CropYieldTracker.Api\\CropYieldTracker.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\CropYieldTracker.Web\\CropYieldTracker.Web.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

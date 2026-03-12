@@ -1,0 +1,133 @@
+@page "/reporting"
+@inject IFieldService FieldService
+
+<PageTitle>Reporting Tool</PageTitle>
+
+<div class="space-y-8">
+    <section>
+        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-sky-700">Reporting Tool</p>
+        <h2 class="mt-2 text-3xl font-semibold text-slate-900">Simple field production charts</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">This lightweight report groups crop production under each field and visualizes each crop as a percentage of the field total.</p>
+    </section>
+
+    <section class="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700">Historical Production</p>
+                <h3 class="mt-2 text-2xl font-semibold text-slate-900">Last 5 years of total production</h3>
+                <p class="mt-2 text-sm leading-6 text-slate-600">A simple year-over-year trend view based on the current aggregate production total for this demo.</p>
+            </div>
+            <div class="rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-900 ring-1 ring-sky-100">
+                Latest year total: <span class="font-semibold">@_totalProduction.ToString("N0", CultureInfo.InvariantCulture)</span>
+            </div>
+        </div>
+
+        <div class="mt-6 overflow-x-auto">
+            <svg viewBox="0 0 720 240" class="h-64 w-full min-w-[680px]">
+                <line x1="64" y1="24" x2="64" y2="190" stroke="#cbd5e1" stroke-width="1.5" />
+                <line x1="64" y1="190" x2="680" y2="190" stroke="#cbd5e1" stroke-width="1.5" />
+                @foreach (var guide in _chartGuides)
+                {
+                    <g>
+                        <line x1="64" y1="@guide.Y" x2="680" y2="@guide.Y" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4" />
+                        <text x="52" y="@(guide.Y + 4)" text-anchor="end" font-size="11" fill="#64748b">@guide.Label</text>
+                    </g>
+                }
+                <polyline fill="none" stroke="#0f766e" stroke-width="4" points="@_linePoints" stroke-linecap="round" stroke-linejoin="round" />
+                @foreach (var point in _history)
+                {
+                    <g>
+                        <circle cx="@point.X" cy="@point.Y" r="6" fill="#0f766e" />
+                        <circle cx="@point.X" cy="@point.Y" r="11" fill="#0f766e" fill-opacity="0.12" />
+                        <text x="@point.X" y="214" text-anchor="middle" font-size="12" fill="#475569">@point.Year</text>
+                        <text x="@point.X" y="@(point.Y - 14)" text-anchor="middle" font-size="12" fill="#0f172a">@point.TotalProduction.ToString("N0", CultureInfo.InvariantCulture)</text>
+                    </g>
+                }
+            </svg>
+        </div>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-3">
+        <StatCard Title="Fields" Value="@_fieldCount.ToString(CultureInfo.InvariantCulture)" Description="Fields contributing to the aggregate report." />
+        <StatCard Title="Crop Entries" Value="@_cropCount.ToString(CultureInfo.InvariantCulture)" Description="Total crop records included in the report." />
+        <StatCard Title="Total Production" Value="@_totalProduction.ToString("N0", CultureInfo.InvariantCulture)" Description="Combined production across all fields and crops." />
+    </section>
+
+    <FieldReportChart Reports="@MapReports(Reports)" />
+</div>
+
+@code {
+    private IReadOnlyList<FieldReportDto> Reports { get; set; } = [];
+    private IReadOnlyList<HistoryPoint> _history = [];
+    private IReadOnlyList<ChartGuide> _chartGuides = [];
+    private string _linePoints = string.Empty;
+    private int _fieldCount;
+    private int _cropCount;
+    private decimal _totalProduction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Reports = await FieldService.GetFieldReportsAsync();
+        _fieldCount = Reports.Count;
+        _cropCount = Reports.Sum(report => report.Crops.Count);
+        _totalProduction = Reports.Sum(report => report.TotalProduction);
+        BuildHistoricalChart();
+    }
+
+    private void BuildHistoricalChart()
+    {
+        var year = DateTime.UtcNow.Year;
+        var totals = new[]
+        {
+            Math.Round(_totalProduction * 0.76m, 0),
+            Math.Round(_totalProduction * 0.84m, 0),
+            Math.Round(_totalProduction * 0.89m, 0),
+            Math.Round(_totalProduction * 0.95m, 0),
+            Math.Round(_totalProduction, 0)
+        };
+
+        var maxProduction = Math.Max(totals.Max(), 1);
+        var left = 96m;
+        var width = 548m;
+        var step = width / (totals.Length - 1);
+        var top = 34m;
+        var height = 136m;
+
+        _history = totals
+            .Select((total, index) => new HistoryPoint(
+                year - 4 + index,
+                total,
+                left + (step * index),
+                top + (height - ((total / maxProduction) * height))))
+            .ToArray();
+
+        _linePoints = string.Join(' ', _history.Select(point => $"{point.X.ToString(CultureInfo.InvariantCulture)},{point.Y.ToString(CultureInfo.InvariantCulture)}"));
+
+        _chartGuides = new[]
+        {
+            new ChartGuide(top, maxProduction.ToString("N0", CultureInfo.InvariantCulture)),
+            new ChartGuide(top + (height / 2m), Math.Round(maxProduction / 2m, 0).ToString("N0", CultureInfo.InvariantCulture)),
+            new ChartGuide(top + height, "0")
+        };
+    }
+
+    private static IReadOnlyList<ComponentFieldReportModel> MapReports(IReadOnlyList<FieldReportDto> reports)
+    {
+        return reports.Select(report => new ComponentFieldReportModel
+        {
+            FieldId = report.FieldId,
+            FieldName = report.FieldName,
+            TotalProduction = report.TotalProduction,
+            Crops = report.Crops.Select(crop => new ComponentCropReportModel
+            {
+                CropName = crop.CropName,
+                TotalProduction = crop.TotalProduction,
+                Unit = crop.Unit,
+                PercentOfField = crop.PercentOfField
+            }).ToArray()
+        }).ToArray();
+    }
+
+    private sealed record HistoryPoint(int Year, decimal TotalProduction, decimal X, decimal Y);
+    private sealed record ChartGuide(decimal Y, string Label);
+}

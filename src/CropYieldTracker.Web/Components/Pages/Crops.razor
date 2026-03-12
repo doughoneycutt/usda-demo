@@ -1,0 +1,153 @@
+@page "/crops"
+@inject IFieldService FieldService
+@inject NavigationManager Navigation
+
+<PageTitle>My Crops</PageTitle>
+
+<div class="space-y-8">
+    <section>
+        <p class="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700">My Crops</p>
+        <h2 class="mt-2 text-3xl font-semibold text-slate-900">Enter crop yields by field</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Total production updates live while you type because this page now runs with Blazor Server interactivity.</p>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-[1fr_1.5fr]">
+        <div class="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-semibold text-slate-900">@(_editCropId.HasValue ? "Edit crop" : "Add crop entry")</h3>
+                    <p class="mt-1 text-sm text-slate-600">Choose a field, then enter acres and yield per acre.</p>
+                </div>
+                @if (_editCropId.HasValue || FieldId.HasValue)
+                {
+                    <button type="button" @onclick="ClearForm" class="text-sm font-semibold text-slate-600 hover:text-slate-900">Clear</button>
+                }
+            </div>
+
+            <EditForm Model="CropForm" OnValidSubmit="HandleValidSubmit" class="space-y-4">
+                <DataAnnotationsValidator />
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="field-select">Field</label>
+                    <select id="field-select" @bind="CropForm.FieldId" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-amber-500">
+                        @foreach (var field in FieldItems)
+                        {
+                            <option value="@field.Id">@field.Name</option>
+                        }
+                    </select>
+                    <ValidationMessage For="@(() => CropForm.FieldId)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="crop-name">Crop</label>
+                    <input id="crop-name" @bind="CropForm.CropName" @bind:event="oninput" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+                    <ValidationMessage For="@(() => CropForm.CropName)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700" for="crop-acres">Acres</label>
+                        <input id="crop-acres" type="number" min="1" step="0.01" @bind="CropForm.Acres" @bind:event="oninput" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+                        <ValidationMessage For="@(() => CropForm.Acres)" class="mt-1 block text-sm text-rose-700" />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700" for="yield">Yield/Acre</label>
+                        <input id="yield" type="number" min="0.01" step="0.01" @bind="CropForm.YieldPerAcre" @bind:event="oninput" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+                        <ValidationMessage For="@(() => CropForm.YieldPerAcre)" class="mt-1 block text-sm text-rose-700" />
+                    </div>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-slate-700" for="unit">Unit</label>
+                    <input id="unit" @bind="CropForm.Unit" @bind:event="oninput" class="w-full rounded-2xl border border-stone-300 px-4 py-3 text-sm outline-none transition focus:border-amber-500" />
+                    <ValidationMessage For="@(() => CropForm.Unit)" class="mt-1 block text-sm text-rose-700" />
+                </div>
+
+                <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    Total production preview: <span class="font-semibold">@PreviewTotal.ToString("N0", CultureInfo.InvariantCulture) @CropForm.Unit</span>
+                </div>
+
+                <button type="submit" class="w-full rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-400">Save crop</button>
+            </EditForm>
+        </div>
+
+        <div class="space-y-4">
+            <CropTable Crops="@MapCrops(CropItems)" />
+        </div>
+    </section>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public Guid? FieldId { get; set; }
+    [SupplyParameterFromQuery] public Guid? EditCropId { get; set; }
+
+    private Guid? _editCropId;
+    private IReadOnlyList<FieldDto> FieldItems { get; set; } = [];
+    private IReadOnlyList<CropDto> CropItems { get; set; } = [];
+    private SaveCropRequest CropForm { get; set; } = new() { Unit = "bu" };
+    private decimal PreviewTotal => Math.Round(CropForm.Acres * CropForm.YieldPerAcre, 2);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadStateAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var saved = await FieldService.SaveCropAsync(CropForm);
+        await LoadStateAsync(saved.FieldId, null);
+        Navigation.NavigateTo($"/crops?fieldId={saved.FieldId}", replace: true);
+    }
+
+    private async Task LoadStateAsync(Guid? preferredFieldId = null, Guid? preferredEditCropId = null)
+    {
+        FieldItems = await FieldService.GetFieldsAsync();
+        CropItems = await FieldService.GetCropsAsync();
+
+        _editCropId = preferredEditCropId ?? EditCropId;
+        var selectedCrop = _editCropId.HasValue ? CropItems.FirstOrDefault(crop => crop.Id == _editCropId.Value) : null;
+
+        if (selectedCrop is not null)
+        {
+            CropForm = new SaveCropRequest
+            {
+                Id = selectedCrop.Id,
+                FieldId = selectedCrop.FieldId,
+                CropName = selectedCrop.CropName,
+                Acres = selectedCrop.Acres,
+                YieldPerAcre = selectedCrop.YieldPerAcre,
+                Unit = selectedCrop.Unit
+            };
+            return;
+        }
+
+        CropForm = new SaveCropRequest
+        {
+            FieldId = preferredFieldId ?? FieldId ?? FieldItems.FirstOrDefault()?.Id ?? Guid.Empty,
+            Unit = string.IsNullOrWhiteSpace(CropForm.Unit) ? "bu" : CropForm.Unit
+        };
+    }
+
+    private void ClearForm()
+    {
+        _editCropId = null;
+        CropForm = new SaveCropRequest
+        {
+            FieldId = FieldItems.FirstOrDefault()?.Id ?? Guid.Empty,
+            Unit = "bu"
+        };
+        Navigation.NavigateTo("/crops", replace: true);
+    }
+
+    private static IReadOnlyList<ComponentCropModel> MapCrops(IReadOnlyList<CropDto> crops)
+    {
+        return crops.Select(crop => new ComponentCropModel
+        {
+            Id = crop.Id,
+            FieldId = crop.FieldId,
+            FieldName = crop.FieldName,
+            CropName = crop.CropName,
+            Acres = crop.Acres,
+            YieldPerAcre = crop.YieldPerAcre,
+            Unit = crop.Unit,
+            TotalProduction = crop.TotalProduction
+        }).ToArray();
+    }
+}
